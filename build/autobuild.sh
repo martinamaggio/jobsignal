@@ -10,6 +10,7 @@ mkdir bin
 # copy source files
 cd bin
 cp -r ../src .
+cp ../src/*.h .
 cp ../build/configure.ac .
 cp ../build/Makefile.am .
 

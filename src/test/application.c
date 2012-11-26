@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <sys/types.h>
-#include <src/jobsignaler.h>
+#include <jobsignaler.h>
 
 #define TOTAL_JOBS 20
 #define DEBUG_APPLICATION 0
