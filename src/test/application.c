@@ -69,6 +69,9 @@ int main(int argc, char* argv[]) {
   float a_cpu, b_cpu;
   float a_mem, b_mem;
   if (argc != 6) {
+  // Side note - Launch with:
+  // ./application 1.0 845.0 0.0 0.0 0.0
+  // to have performance close to zero on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
       fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem\n");
@@ -100,7 +103,7 @@ int main(int argc, char* argv[]) {
       fprintf(stdout, "[application] Mem requirement: %ld\n", mem_requirement);
       fprintf(stdout, "[application] Performance: %f\n", performance);
     #endif
-    sleep(1);
+    //sleep(1);
     jobsignaler_signalend(myself, id);
   }
   jobsignaler_terminate(myself);
