@@ -96,6 +96,8 @@ int main(int argc, char* argv[]) {
     int64_t mem_requirement = a_mem * service_level + b_mem;
     do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
     #ifdef DEBUG_APPLICATION
+      fprintf(stdout, "[application] Cpu requirement: %ld\n", cpu_requirement);
+      fprintf(stdout, "[application] Mem requirement: %ld\n", mem_requirement);
       fprintf(stdout, "[application] Performance: %f\n", performance);
     #endif
     sleep(1);
