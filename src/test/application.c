@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
   // to have performance close to zero without adaptation on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
-      fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem\n");
+      fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem epsilon\n");
       exit(EXIT_APPLICATIONFAILURE);
     #endif
   }
