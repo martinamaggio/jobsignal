@@ -67,13 +67,13 @@ int do_work(int64_t cpu, int64_t mem, double noise) {
 
 int main(int argc, char* argv[]) {
 
-  float service_level = 1.0;
+  float service_level;
   float a_cpu, b_cpu;
   float a_mem, b_mem;
-  double epsilon = 0.1;
+  double epsilon;
   if (argc != 7) {
   // Side note - Launch with:
-  // ./application 1.0 845.0 0.0 0.0 0.0 0.0
+  // ./application 1.0 845.0 0.0 0.0 0.0 1.0
   // to have performance close to zero without adaptation on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
@@ -99,15 +99,17 @@ int main(int argc, char* argv[]) {
     uint id = jobsignaler_signalstart(myself, type);
     performance = get_performance_number(myself, type);
 
-    // Service level adaptation
-    double eps; // effectively used adaptation epsilon
-    if (epsilon == 0.0) eps = 1/(1+jobs);
-    else eps = epsilon;
-    service_level += eps * (performance * service_level - service_level);
-    if (service_level < MINIMUM_SERVICE_LEVEL)
-      service_level = MINIMUM_SERVICE_LEVEL;
-    if (service_level != service_level) // avoid nans
-      service_level = 1.0;
+    if (performance != 0.0) {
+      // Service level adaptation
+      double eps; // effectively used adaptation epsilon
+      if (epsilon == 0.0) eps = 1/(1+(double)jobs);
+      else eps = epsilon;
+      service_level += eps * (performance * service_level - service_level);
+      if (service_level < MINIMUM_SERVICE_LEVEL)
+        service_level = MINIMUM_SERVICE_LEVEL;
+      if (service_level != service_level) // avoid nans
+        service_level = 1.0;
+    }
 
     int64_t cpu_requirement = a_cpu * service_level + b_cpu;
     int64_t mem_requirement = a_mem * service_level + b_mem;
