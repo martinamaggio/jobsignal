@@ -101,10 +101,7 @@ int main(int argc, char* argv[]) {
 
     if (performance != 0.0) {
       // Service level adaptation
-      double eps; // effectively used adaptation epsilon
-      if (epsilon == 0.0) eps = 1/(1+(double)jobs);
-      else eps = epsilon;
-      service_level += eps * (performance * service_level - service_level);
+      service_level += epsilon * (performance * service_level);
       if (service_level < MINIMUM_SERVICE_LEVEL)
         service_level = MINIMUM_SERVICE_LEVEL;
       if (service_level != service_level) // avoid nans
