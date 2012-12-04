@@ -8,6 +8,8 @@
 #define TOTAL_JOBS 20
 #define ARCH_NUM_OP 300
 #define NOISE_PERCENTAGE 0.0
+#define MINIMUM_SERVICE_LEVEL 0.0001
+
 #define DEBUG_APPLICATION 0
 #define ERROR_APPLICATION 0
 #define EXIT_APPLICATIONFAILURE -1
@@ -68,10 +70,11 @@ int main(int argc, char* argv[]) {
   float service_level = 1.0;
   float a_cpu, b_cpu;
   float a_mem, b_mem;
-  if (argc != 6) {
+  double epsilon = 0.1;
+  if (argc != 7) {
   // Side note - Launch with:
-  // ./application 1.0 845.0 0.0 0.0 0.0
-  // to have performance close to zero on lennon
+  // ./application 1.0 845.0 0.0 0.0 0.0 0.0
+  // to have performance close to zero without adaptation on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
       fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem\n");
@@ -83,6 +86,7 @@ int main(int argc, char* argv[]) {
   b_cpu = atof(argv[3]);
   a_mem = atof(argv[4]);
   b_mem = atof(argv[5]);
+  epsilon = atof(argv[6]);
 
   _application_h* myself = jobsignaler_registration();
   uint64_t ert[1] = {1000000000};
@@ -94,16 +98,26 @@ int main(int argc, char* argv[]) {
     int type = 0;
     uint id = jobsignaler_signalstart(myself, type);
     performance = get_performance_number(myself, type);
-    service_level = service_level; // placeholder
+
+    // Service level adaptation
+    double eps; // effectively used adaptation epsilon
+    if (epsilon == 0.0) eps = 1/(1+jobs);
+    else eps = epsilon;
+    service_level += eps * (performance * service_level - service_level);
+    if (service_level < MINIMUM_SERVICE_LEVEL)
+      service_level = MINIMUM_SERVICE_LEVEL;
+    if (service_level != service_level) // avoid nans
+      service_level = 1.0;
+
     int64_t cpu_requirement = a_cpu * service_level + b_cpu;
     int64_t mem_requirement = a_mem * service_level + b_mem;
     do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
     #ifdef DEBUG_APPLICATION
       fprintf(stdout, "[application] Cpu requirement: %ld\n", cpu_requirement);
       fprintf(stdout, "[application] Mem requirement: %ld\n", mem_requirement);
+      fprintf(stdout, "[application] Service level: %f\n", service_level);
       fprintf(stdout, "[application] Performance: %f\n", performance);
     #endif
-    //sleep(1);
     jobsignaler_signalend(myself, id);
   }
   jobsignaler_terminate(myself);
