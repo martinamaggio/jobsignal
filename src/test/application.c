@@ -10,8 +10,8 @@
 #define NOISE_PERCENTAGE 0.0
 #define MINIMUM_SERVICE_LEVEL 0.0001
 
-#define DEBUG_APPLICATION 0
 #define ERROR_APPLICATION 0
+#define LOGGING_APPLICATION 0
 #define EXIT_APPLICATIONFAILURE -1
 
 double generate_random_0_1() {
@@ -107,16 +107,25 @@ int main(int argc, char* argv[]) {
       if (service_level != service_level) // avoid nans
         service_level = 1.0;
     }
-
     int64_t cpu_requirement = a_cpu * service_level + b_cpu;
     int64_t mem_requirement = a_mem * service_level + b_mem;
-    do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
-    #ifdef DEBUG_APPLICATION
-      fprintf(stdout, "[application] Cpu requirement: %ld\n", cpu_requirement);
-      fprintf(stdout, "[application] Mem requirement: %ld\n", mem_requirement);
-      fprintf(stdout, "[application] Service level: %f\n", service_level);
-      fprintf(stdout, "[application] Performance: %f\n", performance);
+    #ifdef LOGGING_APPLICATION
+      struct timespec time_info;
+      int64_t current_time;
+      clock_gettime(CLOCK_REALTIME, &time_info);
+      current_time = (int64_t) time_info.tv_sec*1000000000 
+        + (int64_t) time_info.tv_nsec;
+      char name[10];
+      name = sprintf(name, "%d.log", myself.application_id);
+      FILE* logfile = fopen(name, "a+");
+      fprintf(logfile, "%lld, %f, %f, %lld, %lld, %lld\n", 
+        current_time, performance, service_level, 
+        cpu_requirement, mem_requirement, id);
+      fclose(logfile);
     #endif
+
+    // Do the required work  
+    do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
     jobsignaler_signalend(myself, id);
   }
   jobsignaler_terminate(myself);
