@@ -197,10 +197,7 @@ int get_applications(int* application_ids) {
   struct dirent *fildir;
   jobdir = opendir(getenv("JOBSIGNALER_DIR"));
   if (jobdir == NULL) {
-    #ifdef _JOBSIGNALER_ERROR
-      fprintf(stderr, "[get applications] JOBSIGNALER_DIR not readable\n");
-    #endif
-    return EXIT_FAILURE_UNDEFINEDAUTOSIGNALER;
+    return 0;
   }
   int filecount = 0;
   while (fildir = readdir(jobdir)) {
