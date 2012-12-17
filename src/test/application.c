@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
       current_time = (int64_t) time_info.tv_sec*1000000000 
         + (int64_t) time_info.tv_nsec;
       char name[10];
-      name = sprintf(name, "%d.log", myself.application_id);
+      name = sprintf(name, "%d.log", myself->application_id);
       FILE* logfile = fopen(name, "a+");
       fprintf(logfile, "%lld, %f, %f, %lld, %lld, %lld\n", 
         current_time, performance, service_level, 
