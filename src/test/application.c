@@ -70,14 +70,15 @@ int main(int argc, char* argv[]) {
   float service_level;
   float a_cpu, b_cpu;
   float a_mem, b_mem;
-  double epsilon;
-  if (argc != 7) {
+  double epsilon, weight;
+  double deadline_seconds;
+  if (argc != 9) {
   // Side note - Launch with:
   // ./application 1.0 845.0 0.0 0.0 0.0 1.0
   // to have performance close to zero without adaptation on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
-      fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem epsilon\n");
+      fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem epsilon weight deadline\n");
       exit(EXIT_APPLICATIONFAILURE);
     #endif
   }
@@ -87,10 +88,14 @@ int main(int argc, char* argv[]) {
   a_mem = atof(argv[4]);
   b_mem = atof(argv[5]);
   epsilon = atof(argv[6]);
+  weight = atof(argv[7]);
+  deadline_seconds = atof(argv[8]);
 
   _application_h* myself = jobsignaler_registration();
-  uint64_t ert[1] = {1000000000};
+  uint64_t deadline = (unsigned int) ((double)1000000000 * deadline_seconds);
+  uint64_t ert[1] = {deadline};
   jobsignaler_set(myself, 1, ert);
+  set_weight(myself->application_id, weight);
 
   int jobs;
   double performance;
@@ -99,7 +104,8 @@ int main(int argc, char* argv[]) {
     uint id = jobsignaler_signalstart(myself, type);
     performance = get_performance_number(myself, type);
 
-    if (performance != 0.0) {
+    // I want to adapt only if needed and after _H_MAX_RECORDS jobs
+    if (performance != 0.0 && jobs > _H_MAX_RECORDS) {
       // Service level adaptation
       service_level += epsilon * (performance * service_level);
       if (service_level < MINIMUM_SERVICE_LEVEL)
