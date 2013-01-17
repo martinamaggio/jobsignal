@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
       char name[10];
       sprintf(name, "%u.log", myself->application_id);
       FILE* logfile = fopen(name, "a+");
-      fprintf(logfile, "%lld, %f, %f, %lld, %lld, %lld\n", 
+      fprintf(logfile, "%lld, %f, %f, %lld, %lld, %u\n", 
         current_time, performance, service_level, 
         cpu_requirement, mem_requirement, id);
       fclose(logfile);

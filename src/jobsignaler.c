@@ -88,17 +88,17 @@ int jobsignaler_terminate(_application_h* a) {
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[terminate] started\n");
   #endif
-  int shmid = a->shared_memory_segment;
-  #ifdef _JOBSIGNALER_DEBUG
-    fprintf(stdout, "[terminate] shared memory: %d\n", shmid);
-  #endif
-  shmctl(shmid, IPC_RMID, NULL); // Deleting shared memory segment
   char filename[_H_MAX_FILENAMELENGHT];
   sprintf(filename, "%s/%d", getenv("JOBSIGNALER_DIR"), a->application_id); 
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[terminate] removing %s\n", filename);
   #endif
   remove(filename);
+  int shmid = a->shared_memory_segment;
+  #ifdef _JOBSIGNALER_DEBUG
+    fprintf(stdout, "[terminate] shared memory: %d\n", shmid);
+  #endif
+  shmctl(shmid, IPC_RMID, NULL); // Deleting shared memory segment
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[terminate] ended\n");
   #endif
@@ -197,17 +197,20 @@ int get_applications(int* application_ids) {
   struct dirent *fildir;
   jobdir = opendir(getenv("JOBSIGNALER_DIR"));
   if (jobdir == NULL) {
-    return 0;
+    return -1; // an error occurred
   }
-  int filecount = 0;
-  while (fildir = readdir(jobdir)) {
-    if ((strcmp(fildir->d_name, ".") != 0) &&  
-          (strcmp(fildir->d_name, "..") != 0)) {
-      application_ids[filecount] = atoi(fildir->d_name);
-      ++filecount;
+  else {
+    int filecount = 0;
+    while (fildir = readdir(jobdir)) {
+      if ((strcmp(fildir->d_name, ".") != 0) &&  
+            (strcmp(fildir->d_name, "..") != 0)) {
+        application_ids[filecount] = atoi(fildir->d_name);
+        ++filecount;
+      }
     }
+    closedir(jobdir);
+    return filecount;
   }
-  return filecount;
 }
 
 // ****************************************************************************
@@ -290,8 +293,9 @@ double get_performance_number(_application_h* a, uint job_type) {
   if (a->completed_jobs > _H_MAX_RECORDS)
     upvalue = _H_MAX_RECORDS;
   for (c_act=0; c_act<upvalue; ++c_act) {
-    if (a->jcompleted[c_act].type == job_type || 
-        job_type == -1 || job_type>=a->jobs) {
+    if ((a->jcompleted[c_act].type == job_type || 
+        job_type == -1 || job_type>=a->jobs) &&
+        a->jcompleted[c_act].start_timestamp != 0){
       int64_t deadline = a->expected_response_times[a->jcompleted[c_act].type];
       int64_t response_time = a->jcompleted[c_act].end_timestamp
         - a->jcompleted[c_act].start_timestamp;
@@ -303,7 +307,7 @@ double get_performance_number(_application_h* a, uint job_type) {
     } 
   }
   if (num_performances == 0)
-    return 0.0;
+    return -1.0;
   else
     return sum_performances/num_performances;
 }
