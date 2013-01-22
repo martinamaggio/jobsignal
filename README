@@ -1,0 +1,31 @@
+What is the jobsignaler library?
+-------------------------------------------------------------------------------
+The jobsignaler library is a library to instrument applications and provide
+some useful insight on their computation. The repository contains the code 
+for the library and a test application to demonstrate the library calls.
+A stub for a generic application is briefly sketched. The application has 
+two type of jobs, a long and a short one, and performs some of them.
+
+
+Example of instrumentation calls
+-------------------------------------------------------------------------------
+_application_h* myself = jobsignaler_registration();
+uint64_t ert[2] = {1000000, 90000000}; // expected response times per job type
+jobsignaler_set(myself, 2, ert);
+for (jobs=0; jobs<TOTAL_JOBS; ++jobs) {
+  int type; // set type of job depending on need
+  double performance = get_performance_number(myself, type);
+  // make adaptations if necessary to have better performance
+  uint id = jobsignaler_signalstart(myself, type);
+  // do work for the job
+  jobsignaler_signalend(myself, id);
+}
+jobsignaler_terminate(myself);
+
+
+What do the code contains and needs?
+-------------------------------------------------------------------------------
+The code contains the library itself, a Makefile to compile the code, and a
+simple test application that is driven by command line parameters and performs
+mathematical operations and read and move memory. The code runs on Linux and
+needs to use the shared memory offered by the operating system.
