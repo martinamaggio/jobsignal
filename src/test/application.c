@@ -1,12 +1,13 @@
-#include <stdio.h>
 #include <sys/types.h>
-#include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+
+// Using the library:
 #include <jobsignaler.h>
 
-#define TOTAL_JOBS 20
-#define ARCH_NUM_OP 300
+#define TOTAL_JOBS 100
 #define NOISE_PERCENTAGE 0.0
 #define MINIMUM_SERVICE_LEVEL 0.0001
 
@@ -31,20 +32,14 @@ int do_work(int64_t cpu, int64_t mem, double noise) {
 
   double val = generate_random_0_1() - 0.5; // random between -0.5 and 0.5
   int64_t correction = val * noise * cpu; // noise correction
-  int64_t time_milliseconds = cpu + correction;
-  if (time_milliseconds < 1) time_milliseconds = 1; // sanity check
+  int64_t operations = cpu + correction;
+  if (operations < 1) operations = 1; // sanity check
 
-  for (j=0; j<time_milliseconds; j++) {
-    // work for one millisecond
-    int num_times = ARCH_NUM_OP; // profiling the architecture
-    double c = 0.0;
-    int i;
-    for(i=0; i<num_times; i++) { 
-      double a = generate_random_0_1();
-      double b = generate_random_0_1();
-      c += a*b;
-    }
-    res_discarded += (int)(c*10);
+  // Do mathematical operations
+  for (j=0; j<operations; j++) { 
+    double a = generate_random_0_1();
+    double b = generate_random_0_1();
+    res_discarded += (int)(a*b*10);
   }
 
   int num_chars = mem / 2;
@@ -58,7 +53,8 @@ int do_work(int64_t cpu, int64_t mem, double noise) {
     mem_buffer_rec = (char *)malloc(total_size);
     for (p = mem_buffer_snd; p < mem_buffer_snd + num_chars; p++)
       *p = (char)((uintptr_t)p & 0xff);
-    memcpy(mem_buffer_snd, mem_buffer_rec, total_size); // also memmove could works
+    memcpy(mem_buffer_snd, mem_buffer_rec, total_size); 
+    // also memmove could have worked, instead of memcpy
     free(mem_buffer_snd);
     free(mem_buffer_rec);
   }
@@ -73,15 +69,14 @@ int main(int argc, char* argv[]) {
   double epsilon, weight;
   double deadline_seconds;
   if (argc != 9) {
-  // Side note - Launch with:
-  // ./application 1.0 845.0 0.0 0.0 0.0 1.0
-  // to have performance close to zero without adaptation on lennon
     #ifdef ERROR_APPLICATION
       fprintf(stderr, "[application] usage:\n");
-      fprintf(stderr, "<application> initial_sl a_cpu b_cpu a_mem b_mem epsilon weight deadline\n");
+      fprintf(stderr, "<a> sl a_cpu b_cpu a_mem b_mem eps weight deadline\n");
       exit(EXIT_APPLICATIONFAILURE);
     #endif
   }
+  
+  // Parameter parsing
   service_level = atof(argv[1]);
   a_cpu = atof(argv[2]);
   b_cpu = atof(argv[3]);
@@ -104,8 +99,8 @@ int main(int argc, char* argv[]) {
     uint id = jobsignaler_signalstart(myself, type);
     performance = get_performance_number(myself, type);
 
-    // I want to adapt only if needed and after _H_MAX_RECORDS jobs
-    if (performance != 0.0 && jobs > _H_MAX_RECORDS) {
+    // I want to adapt only if needed
+    if (performance != 0.0) {
       // Service level adaptation
       service_level += epsilon * (performance * service_level);
       if (service_level < MINIMUM_SERVICE_LEVEL)
@@ -113,8 +108,10 @@ int main(int argc, char* argv[]) {
       if (service_level != service_level) // avoid nans
         service_level = 1.0;
     }
+
     int64_t cpu_requirement = a_cpu * service_level + b_cpu;
     int64_t mem_requirement = a_mem * service_level + b_mem;
+
     #ifdef LOGGING_APPLICATION
       struct timespec time_info;
       int64_t current_time;
@@ -135,4 +132,5 @@ int main(int argc, char* argv[]) {
     jobsignaler_signalend(myself, id);
   }
   jobsignaler_terminate(myself);
+
 }

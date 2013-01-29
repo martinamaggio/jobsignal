@@ -2,14 +2,16 @@
 
 // ****************************************************************************
 _application_h* jobsignaler_registration() {
+
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[registration] started\n");
   #endif
   int application_id = (int) getpid();
 
-  // In the environment, get JOBSIGNALER_DIR, which is the directory there the
-  // files about the running applications are stored; if not present, the
-  // call terminates the application to avoid sementation faults
+  // In the environment, get JOBSIGNALER_DIR, which is the directory
+  // there the files about the running applications are stored; if not
+  // present, the call terminates the application to avoid sementation
+  // faults
   if (getenv("JOBSIGNALER_DIR") == NULL) {
     #ifdef _JOBSIGNALER_ERROR
       fprintf(stderr, "[registration] failed, JOBSIGNALER_DIR undefined\n");
@@ -38,10 +40,12 @@ _application_h* jobsignaler_registration() {
     fprintf(stdout, "[registration] ended\n");
   #endif
   return a;
+
 }
 
 // ****************************************************************************
 int jobsignaler_set(_application_h* a, uint types, uint64_t* ert) {
+
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[set] started\n");
   #endif
@@ -65,7 +69,6 @@ int jobsignaler_set(_application_h* a, uint types, uint64_t* ert) {
     a->expected_response_times[c_act] = ert[c_act];
   
   // Application independent initialization
-  // TODO: add counters
   a->total_jobs = 0;
   a->progress_jobs = 0;
   a->completed_jobs = 0;
@@ -81,10 +84,12 @@ int jobsignaler_set(_application_h* a, uint types, uint64_t* ert) {
     fprintf(stdout, "[set] ended\n");
   #endif
   return retvalue;
+
 }
 
 // ****************************************************************************
 int jobsignaler_terminate(_application_h* a) {
+
   #ifdef _JOBSIGNALER_DEBUG
     fprintf(stdout, "[terminate] started\n");
   #endif
@@ -103,10 +108,12 @@ int jobsignaler_terminate(_application_h* a) {
     fprintf(stdout, "[terminate] ended\n");
   #endif
   return EXIT_NORMAL;
+
 }
 
 // ****************************************************************************
 int jobsignaler_signalstart(_application_h* a, uint type) {
+
   // Get actual time
   struct timespec time_info;
   int64_t time;
@@ -136,10 +143,12 @@ int jobsignaler_signalstart(_application_h* a, uint type) {
     pthread_mutex_unlock(&a->mutex);
   #endif
   return job_id;
+
 }
 
 // ****************************************************************************
 int jobsignaler_signalend(_application_h* a, uint id) {
+
   // Get actual time
   struct timespec time_info;
   int64_t time;
@@ -155,6 +164,7 @@ int jobsignaler_signalend(_application_h* a, uint id) {
   int c_act;
   for (c_act=0; c_act<(a->progress_jobs % _H_MAX_RECORDS); ++c_act) {
     if (a->jprogress[c_act].id == id) {
+      
       // Writing it
       uint index_completed = a->completed_jobs % _H_MAX_RECORDS;
       int type = a->jprogress[c_act].type;
@@ -164,12 +174,14 @@ int jobsignaler_signalend(_application_h* a, uint id) {
       a->jcompleted[index_completed].start_timestamp = start;
       a->jcompleted[index_completed].end_timestamp = time;
       a->completed_jobs++;
+
       // Clearing up the progress log
       a->jprogress[c_act].id = 0;
       a->jprogress[c_act].type = 0;
       a->jprogress[c_act].start_timestamp = 0;
       a->jprogress[c_act].end_timestamp = 0;
       a->progress_jobs--;
+
       // Done
       #ifdef _JOBSIGNALER_DEBUG
         fprintf(stdout, "[stop] removed job %d into %d\n", c_act, index_completed);
@@ -182,10 +194,12 @@ int jobsignaler_signalend(_application_h* a, uint id) {
     pthread_mutex_unlock(&a->mutex);
   #endif
   return retvalue;
+
 }
 
 // ****************************************************************************
 int get_applications(int* application_ids) {
+
   if(getenv("JOBSIGNALER_DIR") == NULL) {
     #ifdef _JOBSIGNALER_ERROR
       fprintf(stderr, "[get applications] JOBSIGNALER_DIR undefined\n");
@@ -193,6 +207,8 @@ int get_applications(int* application_ids) {
     return EXIT_FAILURE_UNDEFINEDAUTOSIGNALER;
   }
   // Assumption, in the directory there are only memory mapped files
+  // Which means that the application programmer should choose an
+  // empty directory, keep that in mind when you set JOBSIGNALER_DIR
   DIR* jobdir;
   struct dirent *fildir;
   jobdir = opendir(getenv("JOBSIGNALER_DIR"));
@@ -211,10 +227,12 @@ int get_applications(int* application_ids) {
     closedir(jobdir);
     return filecount;
   }
+
 }
 
 // ****************************************************************************
 _application_h* monitor_application_init(int application_id) {
+
   char filename[_H_MAX_FILENAMELENGHT];
   sprintf(filename, "%s/%d", getenv("JOBSIGNALER_DIR"), application_id);
   key_t key = ftok(filename, application_id);
@@ -227,10 +245,12 @@ _application_h* monitor_application_init(int application_id) {
     return NULL;
   }
   return a;
+
 }
 
 // ****************************************************************************
 int monitor_application_stop(_application_h* a) {
+
   // Detaching shared memory
   if (shmdt(a) == -1) {
     #ifdef _JOBSIGNALER_ERROR
@@ -238,10 +258,12 @@ int monitor_application_stop(_application_h* a) {
     #endif
   }
   return EXIT_NORMAL;
+
 }
 
 // ****************************************************************************
 int set_weight(int application_id, double weight) {
+
   if(getenv("JOBSIGNALER_DIR") == NULL) {
     #ifdef _JOBSIGNALER_ERROR
       fprintf(stderr, "[weight] JOBSIGNALER_DIR undefined\n");
@@ -267,39 +289,56 @@ int set_weight(int application_id, double weight) {
     return EXIT_FAILURE_SHAREDMEMORY;
   }
   return EXIT_NORMAL;
+
 }
 
 // ****************************************************************************
-double get_weight(_application_h* a) {
-  return a->weight;
+double get_weight(_application_h* a) { 
+
+  return a->weight; 
+
 }
 
 // ****************************************************************************
 void set_performance_multiplier(_application_h* a, double multiplier) {
+
   a->performance_multiplier = multiplier;
+
 }
 
 // ****************************************************************************
 double get_performance_multiplier(_application_h* a) {
+
   return a->performance_multiplier;
+
 }
 
 // ****************************************************************************
-double get_performance_number(_application_h* a, uint job_type) {
+double get_performance_number(_application_h* a, int job_type) {
+
+  // Averaging the value of last jobs of specified type: the function
+  // uses all jobs of the given type that are in the latest
+  // records. If empty it will return zero. If called with -1 it will
+  // return the average over all type of jobs.
   double sum_performances = 0.0;
   double num_performances = 0.0;
   int c_act;
   int upvalue = a->completed_jobs;
   if (a->completed_jobs > _H_MAX_RECORDS)
     upvalue = _H_MAX_RECORDS;
+
   for (c_act=0; c_act<upvalue; ++c_act) {
     if ((a->jcompleted[c_act].type == job_type || 
         job_type == -1 || job_type>=a->jobs) &&
-        a->jcompleted[c_act].start_timestamp != 0){
+        // this last condition in the if is used to avoid to report
+        // job of type 0 that are not real jobs but initial values of
+        // the vector: real jobs have a start timestamp
+        a->jcompleted[c_act].start_timestamp != 0) {
       int64_t deadline = a->expected_response_times[a->jcompleted[c_act].type];
       int64_t response_time = a->jcompleted[c_act].end_timestamp
         - a->jcompleted[c_act].start_timestamp;
       double this_perf = ((double) deadline / (double) response_time) - 1.0;
+
       if (this_perf<-1.0) this_perf = -1.0; // thresholds
       if (this_perf>+1.0) this_perf = +1.0;
       sum_performances += this_perf;
@@ -309,6 +348,8 @@ double get_performance_number(_application_h* a, uint job_type) {
   if (num_performances == 0)
     return -1.0;
   else
+    // averaging
     return sum_performances/num_performances;
+
 }
 
